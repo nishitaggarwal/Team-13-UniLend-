@@ -13,6 +13,7 @@ import * as Animatable from 'react-native-animatable';
 import { ArrowRight } from 'lucide-react-native';
 //import { useNavigation } from '@react-navigation/native';
 
+import ResourcesHeader from '../components/resources_header';
 
 import { useNavigation } from '@react-navigation/native';
 
@@ -24,6 +25,7 @@ export default function ResourcesScreen() {
 
   return (
     <LinearGradient colors={['#FADCD9','#F9F1F0']} style={styles.container}>
+    <ResourcesHeader />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Animatable.View animation="fadeInUp" delay={200} style={styles.card}>
           <Image
