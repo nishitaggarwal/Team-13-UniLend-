@@ -26,6 +26,7 @@ export default class UploadNotes extends React.Component {
   constructor() {
     super();
     this.state = {
+      title: '',
       subject: '',
       semester: '',
       description: '',
@@ -61,7 +62,7 @@ export default class UploadNotes extends React.Component {
   }
 
   uploadData = () => {
-    const { subject, semester, description, format, price, file_url, uploaded_by, note_status } = this.state;
+    const {title, subject, semester, description, format, price, file_url, uploaded_by, note_status } = this.state;
 
     if (!subject || !semester || !description || !format || !price) {
       alert('⚠️ All fields except file URL are required!');
@@ -70,8 +71,29 @@ export default class UploadNotes extends React.Component {
 
     this.setState({ loading: true });
 
+
+    const username = "";
+
+    db.collection('users')
+    .where('email_id', '==', firebase.auth().currentUser.email)
+    .limit(1)
+    .get()
+    .then((querySnapshot) => {
+        if (!querySnapshot.empty) {
+        username = querySnapshot.docs[0].data().first_name;
+        console.log("Username:", username);
+        } else {
+        console.log("No user found.");
+        }
+    })
+    .catch((error) => {
+        console.error("Error getting user:", error);
+    });
+
+
     db.collection('notes')
       .add({
+        title,
         subject,
         semester,
         description,
@@ -81,6 +103,7 @@ export default class UploadNotes extends React.Component {
         uploaded_by,
         note_status,
         created_at: firebase.firestore.Timestamp.now(),
+        author: username,
         borrowed_by: '',
         note_id: this.createUniqueId(),
       })
@@ -133,6 +156,11 @@ export default class UploadNotes extends React.Component {
 
             <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
               <Text style={[styles.sectionTitle, { color: isDark ? '#ddd' : '#009387' }]}>📝 Note Details</Text>
+
+
+              <TextInput style={styles.input} 
+              placeholder="Title *" 
+              onChangeText={(text) => this.setState({ title: text })} />
 
               <TextInput style={styles.input} placeholder="Subject *" onChangeText={(text) => this.setState({ subject: text })} />
               <TextInput style={styles.input} placeholder="Semester *" onChangeText={(text) => this.setState({ semester: text })} />

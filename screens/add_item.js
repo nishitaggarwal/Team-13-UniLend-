@@ -11,6 +11,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { ArrowRight } from 'lucide-react-native';
+
+
 //import { useNavigation } from '@react-navigation/native';
 
 import ResourcesHeader from '../components/resources_header';

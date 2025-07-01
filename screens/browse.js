@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  Image,
 } from 'react-native';
 import { firebase } from '../config';
 import { Searchbar } from 'react-native-paper';
@@ -15,7 +16,11 @@ import { Searchbar } from 'react-native-paper';
 const db = firebase.firestore();
 // const currentUserEmail = firebase.auth().currentUser.email;
 
-const tagsList = ['maths', 'physics', 'ece', 'dsa', 'chemistry', 'biology', 'mechanics'];
+
+import AnimatedCard from '../components/animatedCard';
+
+
+const tagsList = ['maths', 'physics', 'ece', 'dsa', 'mechanics'];
 const placeholderOptions = ['books', 'physics', 'ece', 'maths', 'notes'];
 
 const BrowseScreen = () => {
@@ -82,11 +87,44 @@ const BrowseScreen = () => {
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.meta}>Type: {item.type}</Text>
-      <Text style={styles.meta}>By: {item.uploaded_by}</Text>
-      <Text numberOfLines={2}>{item.description}</Text>
+    <View style={styles.itemsList}>
+    
+      <AnimatedCard >
+        <TouchableOpacity style={styles.itemCard}>
+      
+          <View style={styles.itemImageContainer}>
+            <Image source={{ uri: item.cover_image_url }} style={styles.itemImage} />
+
+          
+          </View>
+      
+
+          <View style={styles.itemDetails}>
+
+            <View style={styles.itemHeader}>
+                <Text style={styles.itemTitle} numberOfLines={2}>
+                        {item.title}
+                </Text>
+                <Text style={styles.itemPrice}>{item.price}</Text>
+            </View>        
+
+            <Text style={styles.itemAuthor}>Author: {item.author}</Text>
+
+            <View style={styles.itemFooter}>
+                <View style={styles.conditionContainer}>
+                    <View style={[styles.conditionDot, { backgroundColor: '#FFFD86' }]} />
+                      <Text style={styles.item_condition}>{item.condition}</Text>
+                </View>
+                <Text style={styles.owner}>by {item.uploaded_by}</Text>
+            </View>
+            
+                
+          </View>
+
+
+          
+          </TouchableOpacity>
+       </AnimatedCard>
     </View>
   );
 
@@ -104,7 +142,7 @@ const BrowseScreen = () => {
 
 
    
-
+    <ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickPanel}>
         {tagsList.map((tag) => (
           <TouchableOpacity
@@ -122,6 +160,7 @@ const BrowseScreen = () => {
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 80 }}
       />
+      </ScrollView>
     </View>
   );
 };
@@ -148,6 +187,7 @@ const styles = StyleSheet.create({
   quickPanel: {
     marginBottom: 10,
     flexDirection: 'row',
+    height: 30,
   },
   quickButton: {
     backgroundColor: '#e0e0e0',
@@ -192,6 +232,96 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     //backgroundColor: '#f1f1f1',
   },
+
+
+  //details code style below:- 
+
+  itemsList: {
+    paddingHorizontal: 20,
+    gap: 20,
+  },
+
+  itemImageContainer: {
+    position: 'relative',
+    width: 140,
+    height: 180,
+  },
+
+   itemImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  itemDetails: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'space-between',
+  },
+itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  itemTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontFamily: 'Inter-Bold',
+    color: '#1f2937',
+    marginRight: 10,
+    lineHeight: 24,
+  },
+  itemPrice: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#6366F1',
+  },
+  itemAuthor: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+
+  itemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  conditionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  conditionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  item_condition: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    color: '#374151',
+  },
+  owner: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#9CA3AF',
+  },
+  itemCard: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+    overflow: 'hidden',
+    margin: 20,
+  },
+
+
 });
 
 export default BrowseScreen;
