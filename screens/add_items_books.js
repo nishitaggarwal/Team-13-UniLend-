@@ -91,6 +91,26 @@ export default class UploadBooks extends React.Component {
       }
     }
 
+    //getting username for users collection in database:- 
+  const username = "";
+  db.collection('users')
+  .where('email_id', '==', firebase.auth().currentUser.email)
+  .limit(1)
+  .get()
+  .then((querySnapshot) => {
+    if (!querySnapshot.empty) {
+      username = querySnapshot.docs[0].data().first_name;
+      console.log("Username:", username);
+    } else {
+      console.log("No user found.");
+    }
+  })
+  .catch((error) => {
+    console.error("Error getting user:", error);
+  });
+
+
+
     db.collection('books')
       .add({
         title, author, edition, price,
@@ -101,6 +121,7 @@ export default class UploadBooks extends React.Component {
         book_status: 1,
         borrowed_by: '',
         created_at: firebase.firestore.Timestamp.now(),
+        uploader_username: username,
         book_id,
         cover_image_url: imageUrl || null,
       })
