@@ -13,6 +13,7 @@ web-build/
 
 # firebase/supabase/vexo
 .env
+config.js
 
 ios
 android
