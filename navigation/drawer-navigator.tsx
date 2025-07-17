@@ -27,6 +27,7 @@ export default function DrawerNavigator({ navigation }: Props) {
         component={TabNavigator}
         options={{
           // headerRight: () => <HeaderButton  />,
+          headerShown: false,
           drawerIcon: ({ size, color }) => (
             <MaterialIcons name="border-bottom" size={size} color={color} />
           ),

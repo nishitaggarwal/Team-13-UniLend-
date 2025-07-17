@@ -15,6 +15,7 @@ import { Searchbar } from 'react-native-paper';
 
 const db = firebase.firestore();
 // const currentUserEmail = firebase.auth().currentUser.email;
+import { useNavigation } from '@react-navigation/native';
 
 
 import AnimatedCard from '../components/animatedCard';
@@ -29,7 +30,7 @@ const BrowseScreen = () => {
   const [search, setSearch] = useState('');
   const [placeholder, setPlaceholder] = useState('Search books & notes...');
   const [activeTag, setActiveTag] = useState(null);
-
+  const navigation = useNavigation();
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
@@ -85,12 +86,14 @@ const BrowseScreen = () => {
       setSearch('');
     }
   };
+  
 
   const renderItem = ({ item }) => (
     <View style={styles.itemsList}>
     
       <AnimatedCard >
-        <TouchableOpacity style={styles.itemCard}>
+        <TouchableOpacity style={styles.itemCard}
+          onPress={() => navigation.navigate('ProductDetail', { item })}>
       
           <View style={styles.itemImageContainer}>
             <Image source={{ uri: item.cover_image_url }} style={styles.itemImage} />
@@ -106,9 +109,20 @@ const BrowseScreen = () => {
                         {item.title}
                 </Text>
                 <Text style={styles.itemPrice}>{item.price}</Text>
-            </View>        
+            </View>     
+
 
             <Text style={styles.itemAuthor}>Author: {item.author}</Text>
+
+            <Text
+              style={{
+                color: item.book_status === 1 ? 'green' : 'red',
+                fontWeight: 'bold',
+                marginVertical: 5,
+              }}>
+              {item.book_status === 1 ? 'Available' : 'Not Available'}
+            </Text>
+
 
             <View style={styles.itemFooter}>
                 <View style={styles.conditionContainer}>
@@ -121,13 +135,14 @@ const BrowseScreen = () => {
                 
           </View>
 
-
-          
           </TouchableOpacity>
        </AnimatedCard>
     </View>
   );
 
+
+
+  
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#009387" barStyle="light-content" />
@@ -237,8 +252,8 @@ const styles = StyleSheet.create({
   //details code style below:- 
 
   itemsList: {
-    paddingHorizontal: 20,
-    gap: 20,
+    paddingHorizontal: 10,
+    gap: 10,
   },
 
   itemImageContainer: {
@@ -280,7 +295,7 @@ itemHeader: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#6B7280',
-    marginBottom: 12,
+    marginBottom: 1,
   },
 
   itemFooter: {
@@ -318,7 +333,7 @@ itemHeader: {
     shadowRadius: 20,
     elevation: 12,
     overflow: 'hidden',
-    margin: 20,
+    margin: 12,
   },
 
 
