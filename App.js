@@ -17,6 +17,9 @@ import TabLayout from './navigation/tab-navigator';
 
 const Stack = createNativeStackNavigator();
 
+
+import ProductDetail from './screens/productDetailScreen';
+
 export default function App() {
   return (
     <NavigationContainer>
@@ -60,6 +63,11 @@ export default function App() {
           component={TabLayout}
           options={{ headerShown: false }}
         /> 
+        <Stack.Screen
+          name="ProductDetail"
+          component={ProductDetail}
+          options={{ headerShown: false }}
+        />
   
         
 

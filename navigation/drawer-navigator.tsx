@@ -5,8 +5,6 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '.';
 import TabNavigator from './tab-navigator';
 
-import HomeScreen from '../screens/home';
-import HomeHeader from '../components/home_header';
 
 type Props = StackScreenProps<RootStackParamList, 'DrawerNavigator'>;
 const Drawer = createDrawerNavigator();
@@ -21,8 +19,7 @@ export default function DrawerNavigator({ navigation }: Props) {
           drawerIcon: ({ size, color }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
-          headerShown: false,
-         
+          headerShown: false
         }}
       />
       <Drawer.Screen
@@ -30,6 +27,7 @@ export default function DrawerNavigator({ navigation }: Props) {
         component={TabNavigator}
         options={{
           // headerRight: () => <HeaderButton  />,
+          headerShown: false,
           drawerIcon: ({ size, color }) => (
             <MaterialIcons name="border-bottom" size={size} color={color} />
           ),

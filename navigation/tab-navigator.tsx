@@ -58,6 +58,8 @@ export default function TabLayout({ navigation }: Props) {
           tabBarIcon: ({ size, color }) => (
             <Search size={size} color={color} />
           ),
+          headerShown: false
+
       }}/>
 
       <Tab.Screen
