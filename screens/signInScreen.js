@@ -56,7 +56,7 @@ export default class SignInScreen extends React.Component {
     }
   };
 
-  goToForgotPassword = () => this.props.navigation.navigate('ForgotPassword');
+  goToForgotPassword = () => this.props.navigation.navigate('ForgotPasswordScreen');
 
 
   checkLengthofEmail = () => {

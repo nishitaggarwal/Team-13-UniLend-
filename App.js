@@ -14,6 +14,7 @@ import UploadNotes from './screens/add_items_notes';
 import DrawerNavigator from './navigation/drawer-navigator';
 
 import TabLayout from './navigation/tab-navigator';
+import ForgotPasswordScreen from './screens/forgotPasswordScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +41,11 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="ForgotPasswordScreen"
+          component={ForgotPasswordScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
           name="DrawerNavigator"
           component={DrawerNavigator}
           options={{ headerShown: false }}
@@ -57,17 +63,19 @@ export default function App() {
               title: 'Add Notes',
             }}
         />
-        
+        <Stack.Screen
+          name="ProductDetail"
+          component={ProductDetail}
+          options={{ headerShown: false,
+             title: 'Add Book'
+           }}
+        />
         <Stack.Screen
           name="TabLayout"
           component={TabLayout}
           options={{ headerShown: false }}
         /> 
-        <Stack.Screen
-          name="ProductDetail"
-          component={ProductDetail}
-          options={{ headerShown: false }}
-        />
+        
   
         
 

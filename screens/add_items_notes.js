@@ -150,7 +150,7 @@ export default class UploadNotes extends React.Component {
                   fontWeight: 'bold',
                 },
               }}
-              rightComponent={<Image source={require('../assets/icon.png')} style={{ width: 35, height: 35 }} />}
+              rightComponent={<Image source={require('../assets/request-notes.png')} style={{ width: 35, height: 35 }} />}
               containerStyle={{ borderBottomWidth: 0, elevation: 4 }}
             />
 

@@ -25,7 +25,7 @@ const HomeHeader = () => {
           <Text style={styles.tagline}>Find your next study resource</Text>
         </View>
 
-        <TouchableOpacity style={styles.searchButton}>
+        <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('BrowseScreen')}>
           <Search size={24} color="#3B82F6" />
         </TouchableOpacity>
       </View>

@@ -66,7 +66,7 @@ export default function TabLayout({ navigation }: Props) {
         name = "ResourcesScreen"
         component = {ResourcesScreen}
         options={{
-          title: 'Add\n Resources',
+          title: 'Upload',
           tabBarIcon: ({ size, color }) => (
             <Plus size={size} color={color} />
           ),

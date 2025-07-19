@@ -31,7 +31,7 @@ export default function ResourcesScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Animatable.View animation="fadeInUp" delay={200} style={styles.card}>
           <Image
-            source={require('../assets/favicon.png')}
+            source={require('../assets/request-book.png')}
             style={styles.cardImage}
             resizeMode="contain"
           />
@@ -50,7 +50,7 @@ export default function ResourcesScreen() {
 
         <Animatable.View animation="fadeInUp" delay={400} style={styles.card}>
           <Image
-            source={require('../assets/favicon.png')}
+            source={require('../assets/request-notes.png')}
             style={styles.cardImage}
             resizeMode="contain"
           />

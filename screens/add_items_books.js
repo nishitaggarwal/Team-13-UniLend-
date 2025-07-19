@@ -144,9 +144,8 @@ export default class UploadBooks extends React.Component {
     } = this.state;
 
     return (
-      <ScrollView style={styles.container}>
-        <StatusBar backgroundColor="#009387" barStyle="light-content" />
-        <Header
+      <View style={{ flex: 1, backgroundColor: '#fff' }}>
+       <Header
           backgroundColor="#009387"
           leftComponent={
             <Icon name="arrow-back" color="#fff" onPress={() => this.props.navigation.goBack()} />
@@ -156,7 +155,10 @@ export default class UploadBooks extends React.Component {
             style: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
           }}
           containerStyle={{ borderBottomWidth: 0 }}
-        />
+        />  
+        <ScrollView style={styles.container}>
+        <StatusBar backgroundColor="#009387" barStyle="light-content" />
+     
 
         <TextInput style={styles.input} placeholder="Title *" value={title} onChangeText={text => this.setState({ title: text })} />
         <TextInput style={styles.input} placeholder="Author *" value={author} onChangeText={text => this.setState({ author: text })} />
@@ -187,6 +189,7 @@ export default class UploadBooks extends React.Component {
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>📤 Upload Book</Text>}
         </TouchableOpacity>
       </ScrollView>
+      </View>
     );
   }
 }

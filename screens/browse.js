@@ -4,25 +4,24 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  TextInput,
   TouchableOpacity,
-  ScrollView,
   StatusBar,
   Image,
+  TextInput,
+  Dimensions,
+  Platform,
+  Pressable,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { firebase } from '../config';
-import { Searchbar } from 'react-native-paper';
-
-const db = firebase.firestore();
-// const currentUserEmail = firebase.auth().currentUser.email;
 import { useNavigation } from '@react-navigation/native';
-
-
 import AnimatedCard from '../components/animatedCard';
 
-
+const db = firebase.firestore();
 const tagsList = ['maths', 'physics', 'ece', 'dsa', 'mechanics'];
 const placeholderOptions = ['books', 'physics', 'ece', 'maths', 'notes'];
+const screenWidth = Dimensions.get('window').width;
+const SEARCH_BAR_MAX_WIDTH = 500;
 
 const BrowseScreen = () => {
   const [allItems, setAllItems] = useState([]);
@@ -31,6 +30,8 @@ const BrowseScreen = () => {
   const [placeholder, setPlaceholder] = useState('Search books & notes...');
   const [activeTag, setActiveTag] = useState(null);
   const navigation = useNavigation();
+  const currentUserEmail = firebase.auth().currentUser.email;
+
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
@@ -45,18 +46,29 @@ const BrowseScreen = () => {
       const bookSnapshot = await db.collection('books').get();
       const noteSnapshot = await db.collection('notes').get();
 
-      const books = bookSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data(), type: 'book' }));
-      const notes = noteSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data(), type: 'note' }));
-      const currentUserEmail = firebase.auth().currentUser.email;
-
+      const books = bookSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        type: 'book',
+      }));
+      const notes = noteSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        type: 'note',
+      }));
       const combined = [...books, ...notes].filter(
-        (item) => item.uploaded_by.toLowerCase() !== currentUserEmail.toLowerCase()
+        (item) => item.uploaded_by?.toLowerCase() !== currentUserEmail.toLowerCase()
       );
 
-      // Normalize tags to lowercase
+      // Ensure tags and favourited_by are always arrays
       const cleaned = combined.map((item) => ({
         ...item,
-        tags: (item.tags || []).map((t) => t.toLowerCase()),
+        tags: Array.isArray(item.tags)
+          ? item.tags.map((t) => t.toLowerCase())
+          : [],
+        favourited_by: Array.isArray(item.favourited_by)
+          ? item.favourited_by
+          : [],
       }));
 
       setAllItems(cleaned);
@@ -66,8 +78,48 @@ const BrowseScreen = () => {
     }
   };
 
+  // --- Heart/favorite logic ---
+  const handleToggleFavourite = async (item) => {
+    const collection = item.type === 'book' ? 'books' : 'notes';
+    const ref = db.collection(collection).doc(item.id);
+
+  
+    setFilteredItems((prev) =>
+      prev.map((i) =>
+        i.id === item.id
+          ? {
+              ...i,
+              favourited_by: Array.isArray(i.favourited_by)
+                ? i.favourited_by.includes(currentUserEmail)
+                  ? i.favourited_by.filter((mail) => mail !== currentUserEmail)
+                  : [...i.favourited_by, currentUserEmail]
+                : [currentUserEmail],
+            }
+          : i
+      )
+    );
+
+    try {
+      const isFav =
+        Array.isArray(item.favourited_by) &&
+        item.favourited_by.includes(currentUserEmail);
+      await ref.update({
+        favourited_by: isFav
+          ? firebase.firestore.FieldValue.arrayRemove(currentUserEmail)
+          : firebase.firestore.FieldValue.arrayUnion(currentUserEmail),
+      });
+    } catch (e) {
+      // fetchData();
+    }
+  };
+
   const handleSearch = (text) => {
     setSearch(text);
+    if (!text) {
+      setFilteredItems(allItems);
+      setActiveTag(null);
+      return;
+    }
     const filtered = allItems.filter((item) =>
       item.tags?.some((tag) => tag.startsWith(text.toLowerCase()))
     );
@@ -80,102 +132,169 @@ const BrowseScreen = () => {
       setFilteredItems(allItems);
       setActiveTag(null);
     } else {
-      const filtered = allItems.filter((item) => item.tags?.includes(tag.toLowerCase()));
+      const filtered = allItems.filter((item) =>
+        item.tags?.includes(tag.toLowerCase())
+      );
       setFilteredItems(filtered);
       setActiveTag(tag);
       setSearch('');
     }
   };
-  
 
   const renderItem = ({ item }) => (
     <View style={styles.itemsList}>
-    
-      <AnimatedCard >
-        <TouchableOpacity style={styles.itemCard}
-          onPress={() => navigation.navigate('ProductDetail', { item })}>
-      
+      <AnimatedCard>
+        <TouchableOpacity
+          style={styles.itemCard}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('ProductDetail', { item })}
+        >
           <View style={styles.itemImageContainer}>
-            <Image source={{ uri: item.cover_image_url }} style={styles.itemImage} />
-
-          
+            <Image
+              source={{ uri: item.cover_image_url }}
+              style={styles.itemImage}
+              resizeMode="cover"
+            />
           </View>
-      
-
           <View style={styles.itemDetails}>
-
             <View style={styles.itemHeader}>
-                <Text style={styles.itemTitle} numberOfLines={2}>
-                        {item.title}
-                </Text>
-                <Text style={styles.itemPrice}>{item.price}</Text>
-            </View>     
-
-
-            <Text style={styles.itemAuthor}>Author: {item.author}</Text>
-
+              <Text style={styles.itemTitle} numberOfLines={2}>
+                {item.title}
+              </Text>
+              <Text style={styles.itemPrice}>{item.price}</Text>
+              {/* --- Heart Icon --- */}
+              <TouchableOpacity
+                onPress={() => handleToggleFavourite(item)}
+                hitSlop={12}
+                style={styles.heartBtn}
+              >
+                <Ionicons
+                  name={
+                    Array.isArray(item.favourited_by) &&
+                    item.favourited_by.includes(currentUserEmail)
+                      ? 'heart'
+                      : 'heart-outline'
+                  }
+                  size={22}
+                  color={
+                    Array.isArray(item.favourited_by) &&
+                    item.favourited_by.includes(currentUserEmail)
+                      ? '#E6464D'
+                      : '#222'
+                  }
+                  style={{
+                    marginLeft: 9,
+                  }}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.itemAuthor} numberOfLines={1}>
+              Author: {item.author}
+            </Text>
             <Text
               style={{
                 color: item.book_status === 1 ? 'green' : 'red',
                 fontWeight: 'bold',
                 marginVertical: 5,
-              }}>
+              }}
+            >
               {item.book_status === 1 ? 'Available' : 'Not Available'}
             </Text>
-
-
             <View style={styles.itemFooter}>
-                <View style={styles.conditionContainer}>
-                    <View style={[styles.conditionDot, { backgroundColor: '#FFFD86' }]} />
-                      <Text style={styles.item_condition}>{item.condition}</Text>
-                </View>
-                <Text style={styles.owner}>by {item.uploaded_by}</Text>
+              <View style={styles.conditionContainer}>
+                <View
+                  style={[styles.conditionDot, { backgroundColor: '#FFFD86' }]}
+                />
+                <Text style={styles.item_condition}>{item.condition}</Text>
+              </View>
+              <Text style={styles.owner} numberOfLines={1}>
+                by {item.uploaded_by}
+              </Text>
             </View>
-            
-                
           </View>
-
-          </TouchableOpacity>
-       </AnimatedCard>
+        </TouchableOpacity>
+      </AnimatedCard>
     </View>
   );
 
+  const SEARCH_BAR_CONTAINER_STYLE = {
+    width: Platform.OS === 'web'
+      ? Math.min(screenWidth, SEARCH_BAR_MAX_WIDTH)
+      : '100%',
+    maxWidth: Platform.OS === 'web' ? SEARCH_BAR_MAX_WIDTH : '100%',
+    alignSelf: Platform.OS === 'web' ? 'center' : 'auto',
+    marginVertical: 8,
+    paddingHorizontal: 0,
+  };
 
-
-  
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#009387" barStyle="light-content" />
-        <Searchbar
-                placeholder={placeholder}
-                onChangeText={handleSearch}
-                value={search}
-                style={styles.searchBar}
-                inputStyle={{ fontSize: 16 }}
-                iconColor="#009387"
+
+      {/* Custom Search Header */}
+      <View style={[styles.searchBarContainer, SEARCH_BAR_CONTAINER_STYLE]}>
+        <Ionicons name="search" size={22} color="#009387" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={placeholder}
+          placeholderTextColor="#aaa"
+          value={search}
+          onChangeText={text => {
+            setSearch(text);
+            handleSearch(text);
+          }}
+          returnKeyType="search"
+          underlineColorAndroid="transparent"
+          autoCapitalize="none"
+          autoCorrect={false}
         />
+        {search.length > 0 && (
+          <Pressable onPress={() => handleSearch('')}>
+            <Ionicons name="close-circle" size={20} color="#bdbdbd" style={styles.clearIcon} />
+          </Pressable>
+        )}
+      </View>
 
+      {/* Quick Tag Panel */}
+      <View style={styles.quickPanelContainer}>
+        <FlatList
+          data={tagsList}
+          keyExtractor={(item) => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item: tag }) => (
+            <TouchableOpacity
+              style={[styles.quickButton, activeTag === tag && styles.activeButton]}
+              onPress={() => handleQuickTag(tag)}
+            >
+              <Text
+                style={[
+                  styles.quickText,
+                  activeTag === tag && styles.activeText,
+                ]}
+              >
+                {tag}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
 
-   
-    <ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickPanel}>
-        {tagsList.map((tag) => (
-          <TouchableOpacity
-            key={tag}
-            style={[styles.quickButton, activeTag === tag && styles.activeButton]}
-            onPress={() => handleQuickTag(tag)}>
-            <Text style={[styles.quickText, activeTag === tag && styles.activeText]}>{tag}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
+      {/* List */}
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 80, paddingTop: 10 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', marginTop: 48 }}>
+            <Text style={{ color: '#888', fontSize: 16 }}>
+              No items found.
+            </Text>
+          </View>
+        }
       />
-      </ScrollView>
     </View>
   );
 };
@@ -184,32 +303,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 10,
-    paddingHorizontal: 10,
+    paddingTop: 4,
+    paddingHorizontal: 6,
   },
-  searchBox: {
-    backgroundColor: '#f2f2f2',
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    marginTop: 10,
-  },
-  input: {
-    height: 40,
-    fontSize: 16,
-    color: '#333',
-  },
-  quickPanel: {
-    marginBottom: 10,
+  searchBarContainer: {
     flexDirection: 'row',
-    height: 30,
+    alignItems: 'center',
+    borderRadius: 18,
+    backgroundColor: '#f1f3f8',
+    elevation: 3,
+    shadowColor: '#101920',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    marginTop: 24,
+    marginBottom: 12,
+    height: 44,
+    paddingLeft: 12,
+    paddingRight: 6,
+  },
+  searchIcon: {
+    marginRight: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#222',
+    paddingVertical: Platform.OS === 'web' ? 10 : 6,
+    backgroundColor: 'transparent',
+    fontWeight: '500',
+    borderWidth: 0,
+  },
+  clearIcon: {
+    marginLeft: 4,
+  },
+  quickPanelContainer: {
+    marginBottom: 6,
   },
   quickButton: {
     backgroundColor: '#e0e0e0',
     borderRadius: 20,
     paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginRight: 10,
+    paddingVertical: 6,
+    marginHorizontal: 4,
+    marginBottom: 4,
   },
   activeButton: {
     backgroundColor: '#009387',
@@ -223,81 +359,70 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  card: {
-    backgroundColor: '#f9f9f9',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    elevation: 2,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  itemsList: {
     marginBottom: 5,
   },
-  meta: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 3,
+  itemCard: {
+    backgroundColor: 'white',
+    borderRadius: 18,
+    flexDirection: screenWidth < 700 ? 'column' : 'row',
+    margin: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.11,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 12,
+    elevation: 5,
+    overflow: 'hidden',
+    width: '99%',
+    alignSelf: 'center',
   },
-
-   searchBar: {
-    marginTop: 30,
-    marginBottom: 15,
-    borderRadius: 15,
-    //backgroundColor: '#f1f1f1',
-  },
-
-
-  //details code style below:- 
-
-  itemsList: {
-    paddingHorizontal: 10,
-    gap: 10,
-  },
-
   itemImageContainer: {
-    position: 'relative',
-    width: 140,
-    height: 180,
+    width: screenWidth < 700 ? '100%' : 120,
+    height: screenWidth < 700 ? screenWidth * 0.55 : 155,
+    alignSelf: 'center',
+    backgroundColor: '#f0f0f0',
   },
-
-   itemImage: {
+  itemImage: {
     width: '100%',
     height: '100%',
   },
-
   itemDetails: {
     flex: 1,
-    padding: 20,
+    padding: 14,
     justifyContent: 'space-between',
+    gap: 7,
   },
-itemHeader: {
+  itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  heartBtn: {
+    paddingHorizontal: 0,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 30,
+  },
   itemTitle: {
     flex: 1,
     fontSize: 17,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#1f2937',
     marginRight: 10,
     lineHeight: 24,
   },
   itemPrice: {
     fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#6366F1',
   },
   itemAuthor: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#6B7280',
     marginBottom: 1,
   },
-
   itemFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -306,7 +431,7 @@ itemHeader: {
   conditionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   conditionDot: {
     width: 8,
@@ -315,28 +440,14 @@ itemHeader: {
   },
   item_condition: {
     fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#374151',
   },
   owner: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
     color: '#9CA3AF',
+    maxWidth: 110,
   },
-  itemCard: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 12,
-    overflow: 'hidden',
-    margin: 12,
-  },
-
-
 });
 
 export default BrowseScreen;
