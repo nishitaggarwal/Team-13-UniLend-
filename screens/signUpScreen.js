@@ -19,11 +19,15 @@ import { firebase } from '../config';
 
 const db = firebase.firestore();
 
+// Email validation utility
+const validateEmail = (email) =>
+  !!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+
 export default function SignUpScreen() {
   const navigation = useNavigation();
   const theme = useTheme();
 
-  // Form state
+  // Inputs and validation states
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [contact, setContact] = useState('');
@@ -34,24 +38,61 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Snackbar/state for UX
+  // UI: error tracking for instant field feedback
+  const [errors, setErrors] = useState({});
   const [snackbar, setSnackbar] = useState({ message: '', visible: false });
 
-  // **Modern registration handler**
+  // ----- Error mappings for Firebase Auth codes -----
+  const getFriendlyErrorMessage = (code) => {
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return 'This email is already registered.';
+      case 'auth/invalid-email':
+        return 'Invalid email address format.';
+      case 'auth/operation-not-allowed':
+        return 'Email/password sign up is not enabled.';
+      case 'auth/weak-password':
+        return 'Password should be at least 6 characters.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your internet.';
+      default:
+        return null;
+    }
+  };
+
+  // ----- Registration handler with smooth error handling -----
   const handleRegister = async () => {
-    if (!firstName || !lastName || !branch || !emailId || !password || !confirmPassword) {
-      setSnackbar({ message: 'Please fill all fields.', visible: true });
+    // Validate all fields
+    let err = {};
+    if (!firstName) err.firstName = true;
+    if (!lastName) err.lastName = true;
+    if (!branch) err.branch = true;
+    if (!contact || contact.length !== 10) err.contact = true;
+    if (!validateEmail(emailId)) err.emailId = true;
+    if (!password) err.password = true;
+    if (!confirmPassword) err.confirmPassword = true;
+    if (password && confirmPassword && password !== confirmPassword) err.confirmPassword = true;
+
+    setErrors(err);
+
+    // Show feedback for first error
+    if (Object.keys(err).length) {
+      // More specific user feedback
+      if (err.emailId)
+        setSnackbar({ message: 'Please enter a valid email address.', visible: true });
+      else if (err.contact)
+        setSnackbar({ message: 'Contact number must be exactly 10 digits.', visible: true });
+      else if (err.branch)
+        setSnackbar({ message: 'Branch/Specialization cannot be empty.', visible: true });
+      else if (err.confirmPassword)
+        setSnackbar({ message: password !== confirmPassword ? 'Passwords do not match!' : 'Please fill Confirm Password.', visible: true });
+      else
+        setSnackbar({ message: 'Please fill all fields.', visible: true });
       return;
     }
-    if (password !== confirmPassword) {
-      setSnackbar({ message: 'Passwords do not match!', visible: true });
-      return;
-    }
-    if (contact.length !== 10) {
-      setSnackbar({ message: 'Enter a valid 10-digit contact number.', visible: true });
-      return;
-    }
+
     setSending(true);
+
     try {
       await firebase.auth().createUserWithEmailAndPassword(emailId, password);
       await db.collection('users').add({
@@ -65,9 +106,10 @@ export default function SignUpScreen() {
         account_date: firebase.firestore.Timestamp.now(),
       });
       setSnackbar({ message: 'Registration Successful!', visible: true });
-      setTimeout(() => navigation.navigate('SignInScreen'), 1200);
+      setTimeout(() => navigation.navigate('SignInScreen'), 1300);
     } catch (error) {
-      setSnackbar({ message: error.message, visible: true });
+      const friendly = getFriendlyErrorMessage(error.code) || error.message;
+      setSnackbar({ message: friendly, visible: true });
     } finally {
       setSending(false);
     }
@@ -75,7 +117,7 @@ export default function SignUpScreen() {
 
   return (
     <LinearGradient
-      colors={['#B1E5FB', '#72EDF2', '#FFDEE9']}  
+      colors={['#B1E5FB', '#72EDF2', '#FFDEE9']}
       style={{ flex: 1 }}
     >
       <StatusBar style="dark" backgroundColor="#B1E5FB" />
@@ -96,7 +138,7 @@ export default function SignUpScreen() {
               />
               <Image
                 style={styles.headerLogo}
-                source={require('../assets/icon.png')}
+                source={require('../icon.png')}
               />
               <Text style={styles.headerTitle}>Registration</Text>
             </View>
@@ -104,7 +146,7 @@ export default function SignUpScreen() {
             <ScrollView
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ alignItems: 'center', paddingBottom: 20 }}
+              contentContainerStyle={{ alignItems: 'center', paddingBottom: 16 }}
             >
               <View style={styles.card}>
                 <Image
@@ -119,8 +161,14 @@ export default function SignUpScreen() {
                   value={firstName}
                   mode="outlined"
                   maxLength={20}
-                  onChangeText={setFirstName}
-                  style={styles.input}
+                  onChangeText={txt => {
+                    setFirstName(txt);
+                    if (errors.firstName && txt) setErrors(e => ({ ...e, firstName: false }));
+                  }}
+                  style={[
+                    styles.input,
+                    errors.firstName && styles.inputError
+                  ]}
                   left={<TextInput.Icon name="account" />}
                 />
 
@@ -129,8 +177,14 @@ export default function SignUpScreen() {
                   value={lastName}
                   mode="outlined"
                   maxLength={20}
-                  onChangeText={setLastName}
-                  style={styles.input}
+                  onChangeText={txt => {
+                    setLastName(txt);
+                    if (errors.lastName && txt) setErrors(e => ({ ...e, lastName: false }));
+                  }}
+                  style={[
+                    styles.input,
+                    errors.lastName && styles.inputError
+                  ]}
                   left={<TextInput.Icon name="account-outline" />}
                 />
 
@@ -138,11 +192,19 @@ export default function SignUpScreen() {
                   label="Contact Number"
                   value={contact}
                   mode="outlined"
-                  keyboardType="numeric"
+                  keyboardType="number-pad"
                   maxLength={10}
-                  onChangeText={setContact}
-                  style={styles.input}
+                  onChangeText={txt => {
+                    const val = txt.replace(/[^0-9]/g, "");
+                    setContact(val);
+                    if (errors.contact && val.length === 10) setErrors(e => ({ ...e, contact: false }));
+                  }}
+                  style={[
+                    styles.input,
+                    errors.contact && styles.inputError
+                  ]}
                   left={<TextInput.Icon name="cellphone" />}
+                  error={errors.contact}
                 />
 
                 <TextInput
@@ -155,14 +217,34 @@ export default function SignUpScreen() {
                   left={<TextInput.Icon name="map-marker" />}
                 />
 
-                <TextInput
-                  label="Branch"
-                  value={branch}
-                  mode="outlined"
-                  onChangeText={setBranch}
-                  style={styles.input}
-                  left={<TextInput.Icon name="school-outline" />}
-                />
+                <View style={{ width: '100%' }}>
+                  <TextInput
+                    label="Branch"
+                    value={branch}
+                    mode="outlined"
+                    onChangeText={txt => {
+                      setBranch(txt);
+                      if (errors.branch && txt) setErrors(e => ({ ...e, branch: false }));
+                    }}
+                    style={[
+                      styles.input,
+                      errors.branch && styles.inputError
+                    ]}
+                    left={<TextInput.Icon name="school-outline" />}
+                    error={errors.branch}
+                  />
+                  {/* Mini helper below branch */}
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      marginBottom: 6,
+                      color: errors.branch ? "#e24141" : "#495A6B",
+                      marginLeft: 7
+                    }}
+                  >
+                    Kindly enter your branch or specialization
+                  </Text>
+                </View>
 
                 <TextInput
                   label="Email"
@@ -171,9 +253,16 @@ export default function SignUpScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
-                  onChangeText={setEmailId}
-                  style={styles.input}
+                  onChangeText={txt => {
+                    setEmailId(txt);
+                    if (errors.emailId && validateEmail(txt)) setErrors(e => ({ ...e, emailId: false }));
+                  }}
+                  style={[
+                    styles.input,
+                    errors.emailId && styles.inputError
+                  ]}
                   left={<TextInput.Icon name="email-outline" />}
+                  error={errors.emailId}
                 />
 
                 <TextInput
@@ -181,9 +270,16 @@ export default function SignUpScreen() {
                   value={password}
                   mode="outlined"
                   secureTextEntry
-                  onChangeText={setPassword}
-                  style={styles.input}
+                  onChangeText={txt => {
+                    setPassword(txt);
+                    if (errors.password && txt) setErrors(e => ({ ...e, password: false }));
+                  }}
+                  style={[
+                    styles.input,
+                    errors.password && styles.inputError
+                  ]}
                   left={<TextInput.Icon name="lock-outline" />}
+                  error={errors.password}
                 />
 
                 <TextInput
@@ -191,9 +287,16 @@ export default function SignUpScreen() {
                   value={confirmPassword}
                   mode="outlined"
                   secureTextEntry
-                  onChangeText={setConfirmPassword}
-                  style={styles.input}
+                  onChangeText={txt => {
+                    setConfirmPassword(txt);
+                    if (errors.confirmPassword && txt === password) setErrors(e => ({ ...e, confirmPassword: false }));
+                  }}
+                  style={[
+                    styles.input,
+                    errors.confirmPassword && styles.inputError
+                  ]}
                   left={<TextInput.Icon name="lock-check-outline" />}
+                  error={errors.confirmPassword}
                 />
 
                 <Button
@@ -214,10 +317,21 @@ export default function SignUpScreen() {
             <Snackbar
               visible={snackbar.visible}
               onDismiss={() => setSnackbar({ visible: false, message: '' })}
-              style={{ backgroundColor: '#009387', borderRadius: 10 }}
-              duration={2500}
+              style={{
+                backgroundColor: "#ec505e",
+                borderRadius: 9,
+                marginBottom: 44,
+                minWidth: "82%",
+                alignSelf: 'center',
+                paddingVertical: 6,
+              }}
+              duration={2400}
+              action={{
+                label: "OK",
+                onPress: () => setSnackbar({ visible: false, message: '' })
+              }}
             >
-              {snackbar.message}
+              <Text style={{ color: "white", fontWeight: "bold", fontSize: 15 }}>{snackbar.message}</Text>
             </Snackbar>
           </View>
         </TouchableWithoutFeedback>
@@ -240,7 +354,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: Platform.OS === 'ios' ? 10 : 0,
+    marginTop: Platform.OS === 'ios' ? 15 : 10,
     gap: 7,
   },
   headerLogo: {
@@ -283,10 +397,15 @@ const styles = StyleSheet.create({
     fontSize: 16.5,
     backgroundColor: 'white',
   },
+  inputError: {
+    backgroundColor: "#fff8f4",
+    borderColor: "#e24141",
+    borderWidth: 1.5
+  },
   registerBtn: {
     backgroundColor: "#009387",
     borderRadius: 13,
-    marginTop: 19,
+    marginTop: 13,
     elevation: 3,
   },
   registerBtnLabel: {
@@ -296,3 +415,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
 });
+

@@ -1,217 +1,154 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  Platform,
-  StyleSheet,
-  StatusBar,
-  Alert,
+  View, Text, TouchableOpacity, TextInput,
+  Platform, StyleSheet, StatusBar,
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
-//import db from '../config';
-import {firebase} from '../config';
-// const db = firebase.firestore();
+import { firebase } from '../config';
+import { Snackbar } from 'react-native-paper';
 
-export default class SignInScreen extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      emailId: '',
-      password: '',
-      username: '',
-      check_textInputChange: false,
-      secureTextEntry: false,
-  
-   
-    };
+const getFriendlyErrorMessage = (errorCode) => {
+  switch (errorCode) {
+    case 'auth/invalid-email':
+      return 'The email address is badly formatted.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact support.';
+    case 'auth/user-not-found':
+      return 'No user exists with this email.';
+    case 'auth/wrong-password':
+      return 'Incorrect password. Please try again.';
+    case 'auth/missing-password':
+      return "Please enter your password.";
+    case 'auth/too-many-requests':
+      return 'Too many failed attempts. Please try again later or reset your password.';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your internet connection.';
+    case 'auth/internal-error':
+      return "Internal error. Please try again later.";
+    default:
+      return null;
   }
+};
 
-  userLogin = (emailId, password) => {
-   
-      firebase.auth().signInWithEmailAndPassword(emailId, password).then(() => {
-          this.props.navigation.navigate('DrawerNavigator');
-        })
-        .catch((error) => {
-          var errorCode = error.code;
-          var errorMessage = error.message;
-          return Alert.alert(errorMessage);
-        });
-    
-  };
+export default function SignInScreen({ navigation }) {
+  const [emailId, setEmailId] = useState('');
+  const [password, setPassword] = useState('');
+  const [secureTextEntry, setSecureTextEntry] = useState(false);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
 
-  updateSecureTextEntry = () => {
-    if (this.state.secureTextEntry === true) {
-      this.setState({
-        secureTextEntry: false,
-      });
-    } else {
-      this.setState({
-        secureTextEntry: true,
-      });
+  const showError = (message) =>
+    setSnackbar({ visible: true, message });
+
+  const userLogin = (email, pw) => {
+    if (!email || !pw) {
+      showError("Please enter both email and password.");
+      return;
     }
+    firebase.auth().signInWithEmailAndPassword(email, pw)
+      .then(() => {
+        navigation.navigate('DrawerNavigator');
+      })
+      .catch((error) => {
+        const friendlyMsg =
+          getFriendlyErrorMessage(error.code) ||
+          error.message ||
+          "Unknown error. Please try again.";
+        showError(friendlyMsg);
+      });
   };
 
-  goToForgotPassword = () => this.props.navigation.navigate('ForgotPasswordScreen');
-
-
-  checkLengthofEmail = () => {
-    if (this.state.emailId.length > 1) {
-      this.setState({
-        check_textInputChange: 'true',
-      });
-    } else if (this.state.emailId.length === 0) {
-      this.setState({
-        check_textInputChange: 'false',
-      });
-    }
-  };
-
-  componentDidMount() {
-    this.checkLengthofEmail();
-  }
-
-
-
-  render() {
-    return (
-      <View style={styles.container}>
-        <StatusBar backgroundColor="#009387" barStyle="light-content" />
-        <Animatable.View
-          animation="bounceInUp"
-          duration={500}
-          style={styles.header}>
-          <Text style={styles.text_header}>Welcome!</Text>
-        </Animatable.View>
-        <Animatable.View animation="fadeInUpBig" style={styles.footer}>
-          <Text style={[styles.text_footer, { marginBottom: 2 }]}>
-            Username
-          </Text>
-          <View style={styles.action}>
-            <FontAwesome
-              name="user-o"
-             
-              size={20}
-            />
-            <TextInput
-              placeholder="Your Username"
-              placeholderTextColor="#666666"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(text) => {
-                this.setState({
-                  emailId: text,
-                });
-              }}
-            />
-
-            {this.state.emailId.length > 1 ? (
-              <Animatable.View animation="bounceIn">
-                <Feather name="check-circle" color="green" size={20} />
-              </Animatable.View>
-            ) : null}
-          </View>
- 
-
-          <Text
-            style={[
-              styles.text_footer,
-              {
-                marginTop: 30,
-                marginBottom: 2,
-              },
-            ]}>
-            Password
-          </Text>
-          <View style={styles.action}>
-            <Feather
-              name="lock"
-              size={20}
-            />
-            <TextInput
-              placeholder="Your Password"
-              placeholderTextColor="#666666"
-              secureTextEntry={this.state.secureTextEntry}
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(text) => {
-                this.setState({
-                  password: text,
-                });
-              }}
-            />
-            <TouchableOpacity
-              onPress={() => {
-                this.updateSecureTextEntry();
-              }}>
-              {this.state.secureTextEntry === true ? (
-                <Feather name="eye-off" color="grey" size={20} />
-              ) : (
-                <Feather name="eye" color="grey" size={20} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-
-          <TouchableOpacity
-            onPress={() => {
-              this.goToForgotPassword();
-            }}>
-            <Text style={{ color: '#009387', marginTop: 15 }}>
-              Forgot password?
-            </Text>
+  return (
+    <View style={styles.container}>
+      <StatusBar backgroundColor="#009387" barStyle="light-content" />
+      <Animatable.View animation="bounceInUp" duration={500} style={styles.header}>
+        <Text style={styles.text_header}>Welcome!</Text>
+      </Animatable.View>
+      <Animatable.View animation="fadeInUpBig" style={styles.footer}>
+        <Text style={[styles.text_footer, { marginBottom: 2 }]}>Username</Text>
+        <View style={styles.action}>
+          <FontAwesome name="user-o" size={20} />
+          <TextInput
+            placeholder="Your Username"
+            placeholderTextColor="#666666"
+            style={styles.textInput}
+            autoCapitalize="none"
+            value={emailId}
+            onChangeText={setEmailId}
+          />
+          {emailId.length > 1 ? (
+            <Animatable.View animation="bounceIn">
+              <Feather name="check-circle" color="green" size={20} />
+            </Animatable.View>
+          ) : null}
+        </View>
+        <Text style={[styles.text_footer, { marginTop: 30, marginBottom: 2 }]}>Password</Text>
+        <View style={styles.action}>
+          <Feather name="lock" size={20} />
+          <TextInput
+            placeholder="Your Password"
+            placeholderTextColor="#666666"
+            secureTextEntry={secureTextEntry}
+            style={styles.textInput}
+            autoCapitalize="none"
+            value={password}
+            onChangeText={setPassword}
+            onSubmitEditing={() => userLogin(emailId, password)}
+          />
+          <TouchableOpacity onPress={() => setSecureTextEntry(!secureTextEntry)}>
+            {secureTextEntry ? (
+              <Feather name="eye-off" color="grey" size={20} />
+            ) : (
+              <Feather name="eye" color="grey" size={20} />
+            )}
           </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPasswordScreen')}>
+          <Text style={{ color: '#009387', marginTop: 15 }}>Forgot password?</Text>
+        </TouchableOpacity>
+        <View style={styles.button}>
+          <TouchableOpacity style={styles.signIn} onPress={() => userLogin(emailId, password)}>
+            <LinearGradient colors={['#08d4c4', '#01ab9d']} style={styles.signIn}>
+              <Text style={[styles.textSign, { color: '#fff' }]}>Sign In</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('SignUpScreen')}
+            style={[
+              styles.signIn,
+              { borderColor: '#009387', borderWidth: 1, marginTop: 15 }
+            ]}>
+            <Text style={[styles.textSign, { color: '#009387' }]}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </Animatable.View>
 
-          <View style={styles.button}>
-            <TouchableOpacity
-              style={styles.signIn}
-              onPress={() => {
-                this.userLogin(this.state.emailId, this.state.password);
-              }}>
-              <LinearGradient
-                colors={['#08d4c4', '#01ab9d']}
-                style={styles.signIn}>
-                <Text
-                  style={[
-                    styles.textSign,
-                    {
-                      color: '#fff',
-                    },
-                  ]}>
-                  Sign In
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+      {/* Professional Snackbar for errors */}
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: '' })}
+        style={{
+          backgroundColor: "#ec505e",
+          borderRadius: 8,
+          marginBottom: 34,
+          minWidth: "80%",
+          alignSelf: 'center',
+        }}
+        duration={1950}
+        action={{
+          label: "Dismiss",
+          onPress: () => setSnackbar({ visible: false, message: '' })
+        }}
+      >
+        <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
+          {snackbar.message}
+        </Text>
+      </Snackbar>
 
-            <TouchableOpacity
-              onPress={() => this.props.navigation.navigate('SignUpScreen')}
-              style={[
-                styles.signIn,
-                {
-                  borderColor: '#009387',
-                  borderWidth: 1,
-                  marginTop: 15,
-                },
-              ]}>
-              <Text
-                style={[
-                  styles.textSign,
-                  {
-                    color: '#009387',
-                  },
-                ]}>
-                Sign Up
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Animatable.View>
-      </View>
-    );
-  }
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -246,19 +183,16 @@ const styles = StyleSheet.create({
   action: {
     flexDirection: 'row',
     marginTop: 10,
-
     borderBottomWidth: 1,
     borderBottomColor: '#f2f2f2',
     paddingBottom: 3,
   },
-
   textInput: {
     flex: 1,
     marginTop: Platform.OS === 'ios' ? 0 : -12,
     paddingLeft: 10,
     color: '#05375a',
   },
-
   button: {
     alignItems: 'center',
     marginTop: 50,

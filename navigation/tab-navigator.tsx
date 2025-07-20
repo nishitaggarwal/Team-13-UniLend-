@@ -29,6 +29,7 @@ export default function TabLayout({ navigation }: Props) {
           paddingTop: 0,
           height: Platform.OS === 'ios' ? 90 : 90,
         },
+        
         tabBarActiveTintColor: '#3B82F6',
         tabBarInactiveTintColor: '#6B7280',
         tabBarLabelStyle: {

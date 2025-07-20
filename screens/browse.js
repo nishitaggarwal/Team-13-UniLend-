@@ -19,7 +19,13 @@ import AnimatedCard from '../components/animatedCard';
 
 const db = firebase.firestore();
 const tagsList = ['maths', 'physics', 'ece', 'dsa', 'mechanics'];
-const placeholderOptions = ['books', 'physics', 'ece', 'maths', 'notes'];
+const placeholderOptions = [
+  'books by title…',
+  'notes',
+  'maths',
+  'author, etc.',
+  'topic'
+];
 const screenWidth = Dimensions.get('window').width;
 const SEARCH_BAR_MAX_WIDTH = 500;
 
@@ -56,11 +62,11 @@ const BrowseScreen = () => {
         ...doc.data(),
         type: 'note',
       }));
+
       const combined = [...books, ...notes].filter(
         (item) => item.uploaded_by?.toLowerCase() !== currentUserEmail.toLowerCase()
       );
 
-      // Ensure tags and favourited_by are always arrays
       const cleaned = combined.map((item) => ({
         ...item,
         tags: Array.isArray(item.tags)
@@ -83,7 +89,7 @@ const BrowseScreen = () => {
     const collection = item.type === 'book' ? 'books' : 'notes';
     const ref = db.collection(collection).doc(item.id);
 
-  
+    // Optimistic UI update
     setFilteredItems((prev) =>
       prev.map((i) =>
         i.id === item.id
@@ -109,10 +115,11 @@ const BrowseScreen = () => {
           : firebase.firestore.FieldValue.arrayUnion(currentUserEmail),
       });
     } catch (e) {
-      // fetchData();
+      // Optionally: fetchData();
     }
   };
 
+  // --- Search logic: title OR tags, case-insensitive ---
   const handleSearch = (text) => {
     setSearch(text);
     if (!text) {
@@ -120,9 +127,15 @@ const BrowseScreen = () => {
       setActiveTag(null);
       return;
     }
-    const filtered = allItems.filter((item) =>
-      item.tags?.some((tag) => tag.startsWith(text.toLowerCase()))
-    );
+    const textLower = text.trim().toLowerCase();
+    const filtered = allItems.filter((item) => {
+      const matchesTitle =
+        item.title && item.title.toLowerCase().includes(textLower);
+      const matchesTags =
+        Array.isArray(item.tags) &&
+        item.tags.some((tag) => tag.toLowerCase().includes(textLower));
+      return matchesTitle || matchesTags;
+    });
     setFilteredItems(filtered);
     setActiveTag(null);
   };

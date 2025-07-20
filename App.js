@@ -24,7 +24,20 @@ import ProductDetail from './screens/productDetailScreen';
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="SplashScreen">
+      <Stack.Navigator 
+        screenOptions={{
+          cardStyleInterpolator: ({ current, layouts }) => ({
+            cardStyle: {
+              opacity: current.progress,
+            },
+          }),
+          transitionSpec: {
+            open: { animation: 'timing', config: { duration: 400 } },
+            close: { animation: 'timing', config: { duration: 250 } },
+          },
+        }}
+      
+      initialRouteName="SplashScreen">
         <Stack.Screen 
         name="SplashScreen" 
         component={SplashScreen}  

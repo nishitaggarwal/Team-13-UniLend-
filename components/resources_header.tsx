@@ -46,12 +46,14 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 36,
     elevation: 10,
     shadowColor: '#000',
-    backgroundColor:"#E0EAFC"
+    backgroundColor:"#E0EAFC",
+   
   },
   innerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 15,
   },
   menuButton: {
     width: 44,
