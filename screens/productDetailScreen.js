@@ -9,23 +9,57 @@ import {
   TouchableOpacity,
   StatusBar,
   FlatList,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Header, Icon } from 'react-native-elements';
+import { firebase } from '../config';
 
 const { width } = Dimensions.get('window');
+const db = firebase.firestore();
 
 const ProductDetail = ({ route }) => {
   const { item } = route.params;
   const navigation = useNavigation();
   const [showContact, setShowContact] = useState(false);
+  const [enquirySent, setEnquirySent] = useState(false);
+  const [loadingEnquire, setLoadingEnquire] = useState(false);
+
+  const currentUser = firebase.auth().currentUser;
+  const userEmail = currentUser.email;
 
   const images = item?.cover_image_url
     ? Array.isArray(item.cover_image_url)
       ? item.cover_image_url
       : [item.cover_image_url]
     : [];
+
+  // --- Enquiry Button Handler ---
+  const handleAddEnquiry = async () => {
+    setLoadingEnquire(true);
+
+    try {
+      const collection = item.type === 'note' ? 'notes' : 'books';
+      const docRef = db.collection(collection).doc(item.id);
+
+      await docRef.update({
+        enquired_by: firebase.firestore.FieldValue.arrayUnion(userEmail),
+      });
+
+      setEnquirySent(true);
+      Alert.alert('Enquiry added!', 'Your interest has been sent to the uploader.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add your enquiry. Please try again.');
+    } finally {
+      setLoadingEnquire(false);
+    }
+  };
+
+  // Check if user already enquired to disable button accordingly
+  const alreadyEnquired = Array.isArray(item.enquired_by)
+    ? item.enquired_by.includes(userEmail)
+    : false;
 
   return (
     <View style={styles.container}>
@@ -86,6 +120,28 @@ const ProductDetail = ({ route }) => {
             <Text style={styles.sectionHeader}>Uploaded By</Text>
             <Text style={styles.meta}>{item.uploaded_by}</Text>
           </View>
+
+      
+          <TouchableOpacity
+            style={[styles.enquireButton, (enquirySent || alreadyEnquired) && styles.enquireButtonSent]}
+            activeOpacity={enquirySent || alreadyEnquired ? 1 : 0.85}
+            onPress={enquirySent || alreadyEnquired ? null : handleAddEnquiry}
+            disabled={enquirySent || alreadyEnquired || loadingEnquire}
+          >
+            <Ionicons
+              name={enquirySent || alreadyEnquired ? "checkmark-circle-outline" : "help-circle-outline"}
+              color="#fff"
+              size={22}
+              style={{ marginRight: 10 }}
+            />
+            <Text style={styles.enquireButtonText}>
+              {enquirySent || alreadyEnquired
+                ? 'Enquiry Added'
+                : loadingEnquire
+                ? 'Adding...'
+                : 'Add Enquiry'}
+            </Text>
+          </TouchableOpacity>
 
           {/* Styled Contact Details Button */}
           <TouchableOpacity
@@ -178,12 +234,39 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 4,
   },
+  enquireButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#009387',
+    marginTop: 28,
+    marginBottom: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 26,
+    borderRadius: 20,
+    alignSelf: 'center',
+    shadowColor: '#009387',
+    shadowOpacity: 0.22,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 14,
+    elevation: 7,
+    minWidth: 220,
+  },
+  enquireButtonSent: {
+    backgroundColor: '#229954',
+  },
+  enquireButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
   contactButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#4fd1c5',
-    marginTop: 28,
+    marginTop: 8,
     marginBottom: 10,
     paddingVertical: 15,
     paddingHorizontal: 24,

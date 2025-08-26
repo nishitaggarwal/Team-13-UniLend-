@@ -67,11 +67,11 @@ export default function SignInScreen({ navigation }) {
         <Text style={styles.text_header}>Welcome!</Text>
       </Animatable.View>
       <Animatable.View animation="fadeInUpBig" style={styles.footer}>
-        <Text style={[styles.text_footer, { marginBottom: 2 }]}>Username</Text>
+        <Text style={[styles.text_footer, { marginBottom: 2 }]}>E-Mail</Text>
         <View style={styles.action}>
           <FontAwesome name="user-o" size={20} />
           <TextInput
-            placeholder="Your Username"
+            placeholder="Your Email-Address"
             placeholderTextColor="#666666"
             style={styles.textInput}
             autoCapitalize="none"

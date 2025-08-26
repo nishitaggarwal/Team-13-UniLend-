@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECF6FB',
     marginHorizontal: 2,
     flex: 1,
-    marginRight: 8,
+    marginRight: 5,
     justifyContent: 'center',
     borderColor: "#E4E9EF",
     borderWidth: 1,

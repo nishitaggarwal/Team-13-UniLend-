@@ -174,7 +174,7 @@ const BrowseScreen = () => {
               <Text style={styles.itemTitle} numberOfLines={2}>
                 {item.title}
               </Text>
-              <Text style={styles.itemPrice}>{item.price}</Text>
+              <Text style={styles.itemPrice}>&#8377; {item.price}</Text>
               {/* --- Heart Icon --- */}
               <TouchableOpacity
                 onPress={() => handleToggleFavourite(item)}

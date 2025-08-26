@@ -83,7 +83,7 @@ export default class UploadBooks extends React.Component {
     let imageUrl = null;
     if (image) {
       try {
-        imageUrl = await cloudinaryUpload(image, book_id);
+        imageUrl = "https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&cs=tinysrgb&w=400";
         this.setState({ imageUploaded: true });
       } catch (error) {
         this.setState({ loading: false });
@@ -91,25 +91,22 @@ export default class UploadBooks extends React.Component {
       }
     }
 
-    //getting username for users collection in database:- 
-  const username = "";
-  db.collection('users')
-  .where('email_id', '==', firebase.auth().currentUser.email)
-  .limit(1)
-  .get()
-  .then((querySnapshot) => {
-    if (!querySnapshot.empty) {
-      username = querySnapshot.docs[0].data().first_name;
-      console.log("Username:", username);
-    } else {
-      console.log("No user found.");
+    // --- Wait for user lookup to finish ---
+    let username = '';
+    try {
+      const userSnapshot = await db
+        .collection('users')
+        .where('email_id', '==', firebase.auth().currentUser.email)
+        .get();
+
+      if (!userSnapshot.empty) {
+        // Just take the first one
+        username = userSnapshot.docs[0].data().first_name || '';
+      }
+    } catch (error) {
+      this.setState({ loading: false });
+      return Alert.alert('Could not fetch username');
     }
-  })
-  .catch((error) => {
-    console.error("Error getting user:", error);
-  });
-
-
 
     db.collection('books')
       .add({
@@ -136,6 +133,7 @@ export default class UploadBooks extends React.Component {
         this.setState({ loading: false });
       });
   };
+
 
   render() {
     const {

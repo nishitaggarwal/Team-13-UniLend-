@@ -11,6 +11,10 @@ import CustomDrawerContent from '../components/CustomDrawerContent'; // <-- NEW
 
 import FavouritesScreen from '../screens/FavouritesScreen'; // <-- NEW
 import FavouriteHeader from '../components/favouritesHeader'; // <-- NEW
+
+import EnquiriesScreen  from '../screens/enquiriesScreen';
+import EnquiresHeader from '../components/enquiresHeader'; // <-- NEW
+
 // <-- NEW
 type Props = StackScreenProps<RootStackParamList, 'DrawerNavigator'>;
 
@@ -19,6 +23,7 @@ type DrawerParamList = {
   'User-Uploads': undefined;
   'SettingScreen': undefined;
   'FavouritesScreen': undefined;
+  'EnquiriesScreen': undefined;
 };
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -45,6 +50,8 @@ export default function DrawerNavigator({ navigation }: Props) {
           drawerLabel: "  Home",
         }}
       />
+
+      
       <Drawer.Screen
         name="User-Uploads"
         component={BookUploadsScreen}
@@ -57,7 +64,18 @@ export default function DrawerNavigator({ navigation }: Props) {
           ),
         }}
       />
-
+      <Drawer.Screen
+        name="EnquiriesScreen"
+        component={EnquiriesScreen}
+        options={{
+          header: () => <EnquiresHeader />,
+          headerShown: true,
+          drawerLabel: "  Enquires",
+          drawerIcon: ({ size, color }) => (
+            <Ionicons name="clipboard-outline" size={size} color={color} />
+          ),
+        }}
+      />
 
       <Drawer.Screen
         name="FavouritesScreen"
@@ -71,6 +89,8 @@ export default function DrawerNavigator({ navigation }: Props) {
           ),
         }}
       />
+
+      
       <Drawer.Screen
         name="SettingScreen"
         component={SettingScreen}
@@ -83,11 +103,6 @@ export default function DrawerNavigator({ navigation }: Props) {
           ),
         }}
       />
-
-
-
-
-
 
 
     </Drawer.Navigator>

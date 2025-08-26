@@ -219,7 +219,7 @@ export default function SignUpScreen() {
 
                 <View style={{ width: '100%' }}>
                   <TextInput
-                    label="Branch"
+                    label="Branch/Specialization"
                     value={branch}
                     mode="outlined"
                     onChangeText={txt => {
@@ -233,17 +233,7 @@ export default function SignUpScreen() {
                     left={<TextInput.Icon name="school-outline" />}
                     error={errors.branch}
                   />
-                  {/* Mini helper below branch */}
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      marginBottom: 6,
-                      color: errors.branch ? "#e24141" : "#495A6B",
-                      marginLeft: 7
-                    }}
-                  >
-                    Kindly enter your branch or specialization
-                  </Text>
+            
                 </View>
 
                 <TextInput

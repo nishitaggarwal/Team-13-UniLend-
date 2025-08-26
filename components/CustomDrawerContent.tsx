@@ -89,12 +89,7 @@ const styles = StyleSheet.create({
     color: '#178ca5',
     opacity: 0.8,
   },
-  drawerListWrap: {
-    flex: 0,
-    marginTop: 8,
-    marginLeft: 0,
-    marginRight: 0,
-  },
+ 
   // Logout button
   logoutBtn: {
     marginBottom: 20,
